@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>p2pdirectlink - send files between two peers</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="./src/app.js"></script>
+</head>
+<body>
+    <main>
+        <div id="logo">
+            <img id="logo" src="logo.svg" alt="site logo">
+        </div>
+        <div id="upload">
+            <input class="file-upload" type="file" id="myFile" name="filename">
+            <button class="file-upload" type="button">Choose File</button>
+        </div>
+        <div id="link">
+
+        </div>
+        <div id="explanation">
+            <h1>How does it work?</h1>
+            <p>The service uses webRTC, making possible to establish a peer to peer connection between the users, the only server used in the operation is and websocket that only connects the two peers, none of the data passes between this server, all the connection goes encripted between each peer, assecuring the privacy of the data.</p>
+            <p>None of the ips nor the registers of the users is kept by the server, once you disconnect from the site, the information about your peer is deleted</p>
+
+            <div>
+                <!--imagem grafica de como funciona o serviço-->
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+
+
+
+<!--
+    download page download button
+<form method="get" action="file.doc">
+   <button type="submit">Download!</button>
+</form>
+-->
