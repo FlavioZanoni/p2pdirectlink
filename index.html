@@ -6,19 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>p2pdirectlink - send files between two peers</title>
     <link rel="stylesheet" href="styles.css">
-    <script defer src="./src/app.js"></script>
+    <script defer src="src/bundle.js"></script>
 </head>
 <body>
     <main>
+
+        <label>Your ID:</label><br/>
+        <textarea id="yourId"></textarea><br/>
+
+        <label>Your link:</label><br/>
+        <textarea id="link"></textarea><br/>
+
+        
         <div id="logo">
-            <img id="logo" src="logo.svg" alt="site logo">
+            <img id="logo" src="images/logo.svg" alt="site logo">
         </div>
         <div id="upload">
             <input class="file-upload" type="file" id="myFile" name="filename">
             <button class="file-upload" type="button">Choose File</button>
         </div>
         <div id="link">
-
+            
         </div>
         <div id="explanation">
             <h1>How does it work?</h1>
