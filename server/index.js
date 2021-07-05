@@ -2,31 +2,10 @@ const app = require("express")
 const httpServer = require("http").createServer(app)
 const options = { /* https://socket.io/docs/v4/server-initialization/#Options */ }
 const io = require("socket.io")(httpServer, options)
+
 let exist
 // cant have this, final project must be an database
 let users = []
-
-
-function sendToHost(user) {
-    console.log("sending connection details to host")
-    let data = user.data
-    let receiverId = user.id
-    console.log("data: ",data)
-    //user id with no hash
-    let id = user.hash.slice(1, user.id.length)
-
-    io.to(id).emit("tryHost", data, receiverId)
-}
-
-function sendToReceiver(user, id) {
-    console.log("sending connection details to receiver")
-    let data = user.data
-
-    //user id with no hash
-    let ids = id.slice(1, id.length)
-
-    io.to(ids).emit("tryReceiver", data)
-}
 
 io.on("connection", socket => {
     console.log('[io]=> User has connected')
@@ -36,16 +15,17 @@ io.on("connection", socket => {
         //console.log(user)
 
         if (user.initiator == true) {
-            users.push(user.id)
-            console.log(users)
+            //send user to database
+            users.push(user)
         }
 
         if (user.initiator == false) {
             //console.log(user)
-            
+            let elemento
             users.forEach(element => {
-                if (user.hash == element) {
+                if (user.hash == element.id) {
                     exist = true
+                    elemento = element
                 } else {
                     exist = false
                 }
@@ -53,12 +33,18 @@ io.on("connection", socket => {
             if (exist == true) {
                 console.log("it exists")
                 socket.emit("accepted")
-                sendToHost(user)
+                socket.emit('hostData', elemento)
+                //sendToHost(user)
             } else {
                 console.log("this id does not exist")
                 socket.emit("notFound")
             }
         }
+    })
+
+    socket.on('receiverData', (user, id) => {
+        console.log(user)
+        io.to(id).emit('receiverConnect', user)
     })
 
     socket.on("receiverSend", (user, id) => {

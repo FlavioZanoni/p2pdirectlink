@@ -21,20 +21,25 @@
         <div id="logo">
             <img id="logo" src="images/logo.svg" alt="site logo">
         </div>
-        <div id="upload">
-            <input class="file-upload" type="file" id="myFile" name="filename">
-            <button class="file-upload" type="button">Choose File</button>
+        <div>
+            <input type="file" id="myFile" name="filename">
+            <button id="submit">Enviar</button>
         </div>
         <div id="link">
             
         </div>
-        <div id="explanation">
-            <h1>How does it work?</h1>
-            <p>The service uses webRTC, making possible to establish a peer to peer connection between the users, the only server used in the operation is and websocket that only connects the two peers, none of the data passes between this server, all the connection goes encripted between each peer, assecuring the privacy of the data.</p>
-            <p>None of the ips nor the registers of the users is kept by the server, once you disconnect from the site, the information about your peer is deleted</p>
+        <div id="file">
 
-            <div>
-                <!--imagem grafica de como funciona o serviço-->
+        </div>
+        <div id="footer">
+
+            <div id="explanation">
+                <h1>How does it work?</h1>
+                <p>The connection is made through webRTC connecting the two peers and exchanging information, all the data sent is passed between the peers, a signaling server is used to exchange the connection details, after the connection is done the server doesn't have any connection to the peers messages, the only data kept by the server untill disconnection is the host peer id, securing a private peer to peer connection</p>
+                <p>None of the ips nor the registers of the users is kept by the server, once you disconnect from the site, the information about your peer is deleted</p>
+                <div>
+                    <!--imagem grafica de como funciona o serviço-->
+                </div>
             </div>
         </div>
     </main>
@@ -46,6 +51,6 @@
 <!--
     download page download button
 <form method="get" action="file.doc">
-   <button type="submit">Download!</button>
+   <button type="submit">Download!</buttonR
 </form>
 -->
