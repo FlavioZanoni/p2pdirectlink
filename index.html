@@ -19,7 +19,10 @@
                 <label for="file-upload" class="file">
                     <i class="fa fa-cloud-upload"></i> Upload
                 </label>
+
                 <input id="file-upload" type="file" name="filename"/>
+                <div id="img-prev">
+                </div>
                 <a class="btn" id="submit">Send file</a>
             </div>
         </div>
@@ -38,7 +41,6 @@
         </div>
 
         <div id="footer">
-
             <div id="explanation">
                 <h1>How does it work?</h1>
                 <p>The connection is made through webRTC connecting the two peers and exchanging information, all the data sent is passed between the peers, a signaling server is used to exchange the connection details, after the connection is done the server doesn't have any connection to the peers messages, the only data kept by the server untill disconnection is the host peer id, securing a private peer to peer connection</p>

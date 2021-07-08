@@ -15,7 +15,9 @@ body {
     margin: auto;
 }
 
-
+#linkUn {
+    color: #00FF65;
+}
 
 input[type="file"] {
     display: none;
@@ -41,6 +43,16 @@ input[type="file"] {
     align-items: center;
     padding: 2rem;
     border-radius: 1rem;
+}
+
+#img-prev {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+}
+
+#img-preview {
+    width: 60%;
 }
 
 #link {
@@ -130,5 +142,13 @@ input[type="file"] {
     align-items: center;
     margin: 0rem 10rem 0rem 10rem;
     padding: 1rem;
+}
+
+#invalid {
+    color: red;
+}
+
+p {
+    padding: .5rem;
 }
 
