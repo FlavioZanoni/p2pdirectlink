@@ -7,30 +7,36 @@
     <title>p2pdirectlink - send files between two peers</title>
     <link rel="stylesheet" href="styles.css">
     <script defer src="src/bundle.js"></script>
+    <link rel="shortcut icon" href="./images/favicon.ico" type="image/x-icon">
 </head>
 <body>
     <main>
-
-        <label>Your ID:</label><br/>
-        <textarea id="yourId"></textarea><br/>
-
-        <label>Your link:</label><br/>
-        <textarea id="link"></textarea><br/>
-
-        
         <div id="logo">
             <img id="logo" src="images/logo.svg" alt="site logo">
         </div>
-        <div>
-            <input type="file" id="myFile" name="filename">
-            <button id="submit">Enviar</button>
+        <div id="sendDiv">
+            <div id="send">
+                <label for="file-upload" class="file">
+                    <i class="fa fa-cloud-upload"></i> Upload
+                </label>
+                <input id="file-upload" type="file" name="filename"/>
+                <a class="btn" id="submit">Send file</a>
+            </div>
         </div>
         <div id="link">
-            
+            <h3>Your link:</h3>
         </div>
-        <div id="file">
+        
+        <div id="fileDiv">
+            <div id="file">
+                <div id="loading">
+                    <p>Waiting file</p>
+                    <img id ="loading-img" src="./images/loading.gif" alt="loading">
+                </div>
+                <h3 id="h3-down">Here is your file: </h3>
+            </div>
+        </div>
 
-        </div>
         <div id="footer">
 
             <div id="explanation">
@@ -45,7 +51,6 @@
     </main>
 </body>
 </html>
-
 
 
 <!--
