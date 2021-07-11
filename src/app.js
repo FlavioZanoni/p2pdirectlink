@@ -3,6 +3,15 @@ const io = require("socket.io-client")
 let Peer = require("simple-peer")
 const socket = io("localhost:8080", { transports: ["websocket"] })
 
+console.log(window.location.href)
+console.log(window.location.origin)
+
+// making sure the page doesn't load with the index in the href
+if (window.location.href == window.location.origin + "/index.html") {
+    window.location.href = window.location.origin
+}
+
+
 // globals
 let peerHost
 let peer

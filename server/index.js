@@ -34,7 +34,6 @@ io.on("connection", socket => {
                 console.log("it exists")
                 socket.emit("accepted")
                 socket.emit('hostData', elemento)
-                //sendToHost(user)
             } else {
                 console.log("this id does not exist")
                 socket.emit("notFound")
@@ -42,13 +41,10 @@ io.on("connection", socket => {
         }
     })
 
+    // send receiver data to the host
     socket.on('receiverData', (user, id) => {
         console.log(user)
         io.to(id).emit('receiverConnect', user)
-    })
-
-    socket.on("receiverSend", (user, id) => {
-        sendToReceiver(user, id)
     })
 
     // disconnecting user
