@@ -4,7 +4,6 @@ const options = { /* https://socket.io/docs/v4/server-initialization/#Options */
 const io = require("socket.io")(httpServer, options)
 
 let exist
-// cant have this, final project must be an database
 let users = []
 
 io.on("connection", socket => {
@@ -12,20 +11,16 @@ io.on("connection", socket => {
 
     // user entering the website
     socket.on("user", (user) => {
-        //console.log(user)
-
         if (user.initiator == true) {
-            //send user to database
-            users.push(user)
+            //send user id to array
+            users.push(user.id)
         }
 
         if (user.initiator == false) {
-            //console.log(user)
-            let elemento
+            // checks if id exist
             users.forEach(element => {
-                if (user.hash == element.id) {
+                if (user.hash == element) {
                     exist = true
-                    elemento = element
                 } else {
                     exist = false
                 }
@@ -33,7 +28,11 @@ io.on("connection", socket => {
             if (exist == true) {
                 console.log("it exists")
                 socket.emit("accepted")
-                socket.emit('hostData', elemento)
+
+                // asks data to the host peer
+                let id = user.hash.slice(1, user.hash.length)
+                socket.to(id).emit("needData", socket.id)
+
             } else {
                 console.log("this id does not exist")
                 socket.emit("notFound")
@@ -41,13 +40,17 @@ io.on("connection", socket => {
         }
     })
 
-    // send receiver data to the host
-    socket.on('receiverData', (user, id) => {
-        console.log(user)
-        io.to(id).emit('receiverConnect', user)
+    // receives the host data and pass to the receiver
+    socket.on("hostData", (id, user) => {
+        socket.to(id).emit("hostData", user)
     })
 
-    // disconnecting user
+    // send receiver data to the host
+    socket.on("receiverData", (id, user) => {
+        socket.to(id).emit("receiverConnect", user)
+    })
+
+    // disconnecting user remove id from array
     socket.on("disconnect", (user) => {
         console.log("[io] => user disconnected")
         id = "#" + socket.id
@@ -63,5 +66,3 @@ io.on("connection", socket => {
 httpServer.listen(8080, () => {
     console.log("[nodemon] => tamo on na porta 8080")
 });
-// session browser
-// sala no socket.io ez

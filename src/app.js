@@ -3,23 +3,23 @@ const io = require("socket.io-client")
 let Peer = require("simple-peer")
 const socket = io("localhost:8080", { transports: ["websocket"] })
 
-console.log(window.location.href)
-console.log(window.location.origin)
+// globals
+let peerHost
+let peer
+let = userServer = {
+    "id": "",
+    "initiator": "",
+    "hash": ""
+}
+let user = {
+    "id": "",
+    "data": "",
+    "hash": ""
+}
 
 // making sure the page doesn't load with the index in the href
 if (window.location.href == window.location.origin + "/index.html") {
     window.location.href = window.location.origin
-}
-
-
-// globals
-let peerHost
-let peer
-let user = {
-    "id": "",
-    "data": "",
-    "initiator": "",
-    "hash": ""
 }
 
 // webrtc checker
@@ -29,6 +29,7 @@ if (Peer.WEBRTC_SUPPORT) {
     socket.on("connect", () => {
         console.log('[io]=> connected on the clientside')
         console.log("[io] => socket id = ", socket.id)
+        userServer.id = "#" + socket.id
         user.id = "#" + socket.id
         let url = window.location.href + user.id
         if (window.location.hash == '') {
@@ -94,17 +95,18 @@ if (Peer.WEBRTC_SUPPORT) {
     if (window.location.hash == '') {
         noHashHTML()
 
-        user.initiator = true
-        user.hash = null
+        userServer.initiator = true
+        userServer.hash = null
+
         peerHost = new Peer({
             initiator: true,
             //enables ICE
             trickle: false,
         })
         peerHost.on('signal', function (data) {
-            //document.getElementById("yourId").value = JSON.stringify(data)
+
             user.data = data
-            //document.getElementById("link").innerHTML = "oie"
+
             emitUser()
             document.querySelector("#submit").addEventListener('click', ()=> {
                 // gets file
@@ -126,7 +128,9 @@ if (Peer.WEBRTC_SUPPORT) {
     } else {
         hashHTML()
 
-        user.initiator = false
+        userServer.initiator = false
+        userServer.hash = window.location.hash
+
         user.hash = window.location.hash
         peer = new Peer({
             initiator: false,
@@ -135,40 +139,6 @@ if (Peer.WEBRTC_SUPPORT) {
         })
         emitUser()
     }
-
-    // peer receiver receiving data
-    socket.on('hostData', (host) => { 
-        console.log("Here is the host data: ", host.data)
-        peer.signal(host.data)
-        peer.on('signal', function (data) {
-            //document.getElementById("yourId").value = JSON.stringify(data)
-            user.data = data
-            console.log(user.data)
-            peer.on('connect', () => { console.log("[peerReceiver] = Connected with peer host") })
-            // emits the receiver data and the host id
-            let id = host.id.slice(1, host.id.length)
-            console.log("user :", user, id)
-            socket.emit('receiverData', user.data, id)
-        })
-        peer.on('data', data => {
-            // convert it to an blob
-            let blob = new TextDecoder("utf-8").decode(data)
-            console.log(blob)
-
-            blobToFile(blob, "upload")
-
-            // convert it to dataURL
-            function blobToFile(theBlob, fileName){
-                //A Blob() is almost a File() - it's just missing the two properties below which we will add
-                theBlob.lastModifiedDate = new Date()
-                theBlob.name = fileName
-
-                createHTML(theBlob)
-                // input file in the html
-
-            }
-        })
-    })
 
     function createHTML(theBlob) {
         document.querySelector("#h3-down").hidden = false
@@ -191,22 +161,76 @@ if (Peer.WEBRTC_SUPPORT) {
     // emits the user object to the server
     function emitUser() {
         console.log("user emited")
-        socket.emit("user", user)
+        socket.emit("user", userServer)
     }
-
-    // host receives the user data to connect
-    socket.on('receiverConnect', (user) => {
-        console.log("oiee teste de recebimento do peer receiver")
-        console.log("user receiver data: ", user)
-        peerHost.signal(user)
-        peerHost.on('connect', () => { console.log("[peerHost] = Connected with peer receiver") })
-    })
 
     // id matches database
     socket.on('accepted', () => {
         console.log("id maches database")
     })
 
+    // send host data to the server then from the server to the receiver
+    socket.on("needData", (id) => {
+        socket.emit("hostData", id, user)
+    })
+
+
+    // peer receiver receiving data
+    socket.on('hostData', (host) => { 
+        console.log("Here is the host data: ", host.data)
+        peer.signal(host.data)
+        peer.on('signal', function (data) {
+            user.data = data
+            console.log(user.data)
+
+            // emits the receiver data and the host id
+            let id = host.id.slice(1, host.id.length)
+            console.log("user :", user, id)
+            socket.emit('receiverData', id, user.data)
+
+            peer.on('connect', () => { 
+                console.log("[peerReceiver] = Connected with peer host")
+                // terminates the socket
+                socket.disconnect(
+                    console.log("socket terminated")
+                )
+            })
+        })
+        peer.on('data', data => {
+            // convert it to an blob
+            let blob = new TextDecoder("utf-8").decode(data)
+            console.log(blob)
+
+            blobToFile(blob, "upload")
+
+            // convert it to dataURL
+            function blobToFile(theBlob, fileName){
+                //A Blob() is almost a File() - it's just missing the two properties below which we will add
+                theBlob.lastModifiedDate = new Date()
+                theBlob.name = fileName
+
+                createHTML(theBlob)
+                // input file in the html
+
+            }
+        })
+    })
+
+    // host receives the user data to connect
+    socket.on('receiverConnect', (user) => {
+        console.log("oiee teste de recebimento do peer receiver")
+        console.log("user receiver data: ", user)
+        peerHost.signal(user)
+        peerHost.on('connect', () => {
+            console.log("[peerHost] = Connected with peer receiver") 
+            // terminates the socket
+            socket.disconnect(
+                console.log("socket terminated")
+            )
+        })
+    })
+
+    
     // id doesn't mach database
     socket.on('notFound', () => {
         // setup the html for invalid link
@@ -261,6 +285,7 @@ if (Peer.WEBRTC_SUPPORT) {
 
     // send message on user disconnect
     socket.on("disconnect")
+
 } else {
     window.location = window.location.origin + "/src/unsuported.html"
 }
