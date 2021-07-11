@@ -2,7 +2,7 @@
 // imports
 const io = require("socket.io-client")
 let Peer = require("simple-peer")
-const socket = io("localhost:8080", { transports: ["websocket"] })
+const socket = io("https://sleepy-hamlet-10685.herokuapp.com/", { transports: ["websocket"] })
 
 // globals
 let peerHost
