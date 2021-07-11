@@ -63,6 +63,6 @@ io.on("connection", socket => {
     })
 })
 
-httpServer.listen(8080, () => {
+httpServer.listen(process.env.PORT || 8080, () => {
     console.log("[nodemon] => tamo on na porta 8080")
 });
