@@ -2,6 +2,7 @@
 // imports
 const io = require("socket.io-client")
 const Peer = require("simple-peer")
+const saveAs = require("file-saver")
 const socket = io("https://sleepy-hamlet-10685.herokuapp.com/", { transports: ["websocket"] })
 
 // globals
@@ -18,6 +19,7 @@ let user = {
     "data": "",
     "hash": ""
 }
+let mime;
 
 // making sure the page doesn't load with the index in the href
 if (window.location.href == window.location.origin + "/index.html") {
@@ -32,7 +34,7 @@ if (Peer.WEBRTC_SUPPORT) {
         hash = false
         noHashHTML()
         loadingLink()
-        
+
     } else {
         hash = true
         hashHTML()
@@ -46,15 +48,14 @@ if (Peer.WEBRTC_SUPPORT) {
         document.getElementById("file-upload").addEventListener("change", () => {
             let file = document.getElementById("file-upload").files[0]
             let reader = new FileReader()
-
             reader.readAsDataURL(file)
-            reader.onload = function() {
+            reader.onload = function () {
                 let img = document.createElement('img')
                 img.src = reader.result
                 img.id = "img-preview"
                 document.getElementById("img-prev").appendChild(img)
             }
-            reader.onerror = function() {
+            reader.onerror = function () {
                 console.log(reader.error)
             }
         })
@@ -81,7 +82,7 @@ if (Peer.WEBRTC_SUPPORT) {
         document.getElementById("fileDiv").hidden = true
         document.getElementById("h3-down").hidden = true
     }
-    
+
     //init the socket
     socket.on("connect", () => {
         console.log('[io]=> connected on the serverside')
@@ -93,44 +94,70 @@ if (Peer.WEBRTC_SUPPORT) {
     })
 
     // runs only when the socket is initiated
-    function runAll() {    
+    function runAll() {
         //init the peer depending on the window.location.hash
         // if doesnt have hash it will be the initiator, if has an hash is the receiver
         if (hash == false) {
             userServer.initiator = true
             userServer.hash = null
-    
+
             peerHost = new Peer({
                 initiator: true,
                 //enables ICE
                 trickle: false,
             })
             peerHost.on('signal', function (data) {
-    
+
                 user.data = data
-    
+
                 emitUser()
-                document.getElementById("submit").addEventListener('click', ()=> {
+                document.getElementById("submit").addEventListener('click', () => {
                     // gets file
+                    let chunkSize = 200000
                     let file = document.getElementById("file-upload").files[0]
                     let reader = new FileReader()
-    
+
                     reader.readAsDataURL(file)
-                    reader.onload = function() {
-                        console.log(reader.result)
-                        peerHost.send(reader.result)
+                    reader.onload = function () {
+                        let fileSize = reader.result.length
+
+                        if (fileSize < chunkSize) {
+                            console.log(reader.result)
+                            peerHost.send(reader.result)
+                            console.log(file.type)
+                            peerHost.send("d")
+                        } else {
+                            // sends file pieces of 200kb for the peer
+                            for (let start = 0; start < fileSize; start += chunkSize) {
+                                let result = reader.result
+                                let chunk
+                                console.log(start)
+                                // checks the if the chunk gonna be full size or not
+                                if (chunkSize > fileSize - start) {
+                                    console.log("smallerchunk")
+                                    let final = start + (fileSize - start)
+
+                                    chunk = result.slice(start, final)
+                                    peerHost.send(chunk)
+
+                                    console.count("enviado")
+                                } else {
+                                    chunk = result.slice(start, start + chunkSize)
+                                    peerHost.send(chunk)
+                                    console.count("enviado2")
+                                }
+                            }
+                            // when finishes sending the pieces, send a "d" of done
+                            peerHost.send("d")
+                        }
                     }
-                    reader.onerror = function() {
-                        console.log(reader.error)
-                    }
-                    console.log(file)  
                 })
             })
-    
+
         } else {
             userServer.initiator = false
             userServer.hash = window.location.hash
-    
+
             user.hash = window.location.hash
             peer = new Peer({
                 initiator: false,
@@ -139,31 +166,32 @@ if (Peer.WEBRTC_SUPPORT) {
             })
             emitUser()
         }
-    
-        function createHTML(theBlob) {
+
+        function createHTML(link) {
+
             document.getElementById("h3-down").hidden = false
             document.getElementById("loading").remove()
             // image
             let img = document.createElement('img')
-            img.src = theBlob
+            img.src = link
             img.id = "img-down"
             document.getElementById("file").appendChild(img)
-    
+
             // download button
             let button = document.createElement("a")
             button.className = "btn"
             button.innerHTML = "Download";
-            button.href= theBlob
+            button.href = link
             button.download = "peerFile"
             document.getElementById("file").appendChild(button)
         }
-    
+
         // emits the user object to the server
         function emitUser() {
             console.log("user emited")
             socket.emit("user", userServer)
             if (window.location.hash == '') {
-                createId(url) 
+                createId(url)
             }
         }
 
@@ -173,9 +201,9 @@ if (Peer.WEBRTC_SUPPORT) {
             txt.id = "txtLink"
             txt.innerText = url
             document.getElementById("link").appendChild(txt)
-            
+
             // removes the loading paragraph and image
-            document.getElementById("loading-p").remove() 
+            document.getElementById("loading-p").remove()
             document.getElementById("loading-img").remove()
 
             // copied message
@@ -189,34 +217,34 @@ if (Peer.WEBRTC_SUPPORT) {
                 )
                 setTimeout(() => {
                     document.getElementById("alert").remove()
-                },1200)
+                }, 1200)
             })
         }
-    
+
         // id matches database
         socket.on('accepted', () => {
             console.log("id maches database")
         })
-    
+
         // send host data to the server then from the server to the receiver
         socket.on("needData", (id) => {
             socket.emit("hostData", id, user)
         })
-  
+
         // peer receiver receiving data
-        socket.on('hostData', (host) => { 
-            console.log("Here is the host data: ", host.data)
+        socket.on('hostData', (host) => {
+            //console.log("Here is the host data: ", host.data)
             peer.signal(host.data)
             peer.on('signal', function (data) {
                 user.data = data
                 console.log(user.data)
-    
+
                 // emits the receiver data and the host id
                 let id = host.id.slice(1, host.id.length)
                 console.log("user :", user, id)
                 socket.emit('receiverData', id, user.data)
-    
-                peer.on('connect', () => { 
+
+                peer.on('connect', () => {
                     console.log("[peerReceiver] = Connected with peer host")
                     // terminates the socket
                     socket.disconnect(
@@ -225,80 +253,93 @@ if (Peer.WEBRTC_SUPPORT) {
                 })
             })
 
+            let uintArr = []
             peer.on('data', data => {
-                // convert it to an blob
-                let blob = new TextDecoder("utf-8").decode(data)
-                console.log(blob)
-    
-                blobToFile(blob, "upload")
-    
-                // convert it to dataURL
-                function blobToFile(theBlob, fileName){
-                    //A Blob() is almost a File() - it's just missing the two properties below which we will add
-                    theBlob.lastModifiedDate = new Date()
-                    theBlob.name = fileName
-    
-                    createHTML(theBlob)
-                    // input file in the html
-    
+                if (data.length == 1 && data[0] == 100) {
+                    console.log("file is done")
+                    concat(uintArr)
+                } else {
+                    uintArr.push(data)
                 }
+
+                // concat and convert it to dataURL
+                function concat(arrays) {
+                    // sum of individual array lengths
+                    let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
+                    
+                    if (!arrays.length) return null;
+                    
+                    let result = new Uint8Array(totalLength);
+                    
+                    // for each array - copy it over result
+                    // next array is copied right after the previous one
+                    let length = 0;
+                    for(let array of arrays) {
+                        result.set(array, length);
+                        length += array.length;
+                    }
+                    
+                    let link = new TextDecoder("utf-8").decode(result)
+                    console.log(link)
+                    createHTML(link)
+                } 
             })
         })
-    
+
         // host receives the user data to connect
         socket.on('receiverConnect', (user) => {
-            console.log("oiee teste de recebimento do peer receiver")
             console.log("user receiver data: ", user)
             peerHost.signal(user)
             peerHost.on('connect', () => {
-                console.log("[peerHost] = Connected with peer receiver") 
+                console.log("[peerHost] = Connected with peer receiver")
+                window.alert("receiver connected")
                 // terminates the socket
                 socket.disconnect(
                     console.log("socket terminated")
                 )
             })
         })
-    
+
         // id doesn't mach database
         socket.on('notFound', () => {
             // setup the html for invalid link
             document.getElementById("loading").remove()
             document.getElementById("footer").remove()
-    
+
             let head = document.createElement('h1')
             head.innerText = "This link is invalid"
             head.id = "invalid"
-    
+
             let paragraph = document.createElement('p')
             paragraph.innerHTML = "this may be caused by:"
-    
+
             let list = document.createElement('ul')
-    
+
             let l1 = document.createElement('li')
             l1.innerText = "Wrong link"
             list.appendChild(l1)
-    
+
             let l2 = document.createElement('li')
             l2.innerText = "Host user has disconnected"
             list.appendChild(l2)
-    
+
             let l3 = document.createElement('li')
             l3.innerText = "Server error"
             list.appendChild(l3)
-    
-            
-            let btn =  document.createElement("a")
+
+
+            let btn = document.createElement("a")
             btn.href = window.location.origin
             btn.className = "btn"
             btn.innerText = "Main page"
-            
+
             let file = document.getElementById("file")
             file.appendChild(head)
             file.appendChild(paragraph)
             file.appendChild(list)
             file.appendChild(btn)
-    
-    
+
+
             // terminates the peer
             peer.destroy(
                 console.log("peer terminated")
@@ -307,18 +348,18 @@ if (Peer.WEBRTC_SUPPORT) {
             socket.disconnect(
                 console.log("socket terminated")
             )
-    
+
             throw console.error("This link is invalid")
         })
-    
+
         // send message on user disconnect
         socket.on("disconnect")
     }
-    
+
 } else {
     window.location = window.location.origin + "/src/unsuported.html"
 }
-},{"simple-peer":54,"socket.io-client":55}],2:[function(require,module,exports){
+},{"file-saver":28,"simple-peer":55,"socket.io-client":56}],2:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -2401,7 +2442,7 @@ function numberIsNaN (obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"base64-js":4,"buffer":6,"ieee754":30}],7:[function(require,module,exports){
+},{"base64-js":4,"buffer":6,"ieee754":31}],7:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -2851,7 +2892,7 @@ formatters.j = function (v) {
 };
 
 }).call(this)}).call(this,require('_process'))
-},{"./common":9,"_process":35}],9:[function(require,module,exports){
+},{"./common":9,"_process":36}],9:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -3114,7 +3155,7 @@ function setup(env) {
 
 module.exports = setup;
 
-},{"ms":32}],10:[function(require,module,exports){
+},{"ms":33}],10:[function(require,module,exports){
 module.exports = (() => {
   if (typeof self !== "undefined") {
     return self;
@@ -3826,7 +3867,7 @@ function clone(obj) {
 
 module.exports = Socket;
 
-},{"./transports/index":14,"component-emitter":7,"debug":8,"engine.io-parser":25,"parseqs":33,"parseuri":34}],13:[function(require,module,exports){
+},{"./transports/index":14,"component-emitter":7,"debug":8,"engine.io-parser":25,"parseqs":34,"parseuri":35}],13:[function(require,module,exports){
 const parser = require("engine.io-parser");
 const Emitter = require("component-emitter");
 const debug = require("debug")("engine.io-client:transport");
@@ -4732,7 +4773,7 @@ class Polling extends Transport {
 
 module.exports = Polling;
 
-},{"../transport":13,"debug":8,"engine.io-parser":25,"parseqs":33,"yeast":66}],18:[function(require,module,exports){
+},{"../transport":13,"debug":8,"engine.io-parser":25,"parseqs":34,"yeast":67}],18:[function(require,module,exports){
 const globalThis = require("../globalThis");
 const nextTick = (() => {
   const isPromiseAvailable =
@@ -5011,7 +5052,7 @@ class WS extends Transport {
 module.exports = WS;
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"../transport":13,"../util":20,"./websocket-constructor":18,"buffer":6,"debug":8,"engine.io-parser":25,"parseqs":33,"yeast":66}],20:[function(require,module,exports){
+},{"../transport":13,"../util":20,"./websocket-constructor":18,"buffer":6,"debug":8,"engine.io-parser":25,"parseqs":34,"yeast":67}],20:[function(require,module,exports){
 module.exports.pick = (obj, ...attr) => {
   return attr.reduce((acc, k) => {
     if (obj.hasOwnProperty(k)) {
@@ -5063,7 +5104,7 @@ module.exports = function(opts) {
   }
 };
 
-},{"./globalThis":10,"has-cors":29}],22:[function(require,module,exports){
+},{"./globalThis":10,"has-cors":30}],22:[function(require,module,exports){
 const PACKET_TYPES = Object.create(null); // no Map = no polyfill
 PACKET_TYPES["open"] = "0";
 PACKET_TYPES["close"] = "1";
@@ -5808,6 +5849,12 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
 }
 
 },{}],28:[function(require,module,exports){
+(function (global){(function (){
+(function(a,b){if("function"==typeof define&&define.amd)define([],b);else if("undefined"!=typeof exports)b();else{b(),a.FileSaver={exports:{}}.exports}})(this,function(){"use strict";function b(a,b){return"undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){g(d.response,b,c)},d.onerror=function(){console.error("could not download file")},d.send()}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send()}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"))}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b)}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof global&&global.global===global?global:void 0,a=f.navigator&&/Macintosh/.test(navigator.userAgent)&&/AppleWebKit/.test(navigator.userAgent)&&!/Safari/.test(navigator.userAgent),g=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype&&!a?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href)},4E4),setTimeout(function(){e(j)},0))}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else{var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i)})}}:function(b,d,e,g){if(g=g||open("","_blank"),g&&(g.document.title=g.document.body.innerText="downloading..."),"string"==typeof b)return c(b,d,e);var h="application/octet-stream"===b.type,i=/constructor/i.test(f.HTMLElement)||f.safari,j=/CriOS\/[\d]+/.test(navigator.userAgent);if((j||h&&i||a)&&"undefined"!=typeof FileReader){var k=new FileReader;k.onloadend=function(){var a=k.result;a=j?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),g?g.location.href=a:location=a,g=null},k.readAsDataURL(b)}else{var l=f.URL||f.webkitURL,m=l.createObjectURL(b);g?g.location=m:location.href=m,g=null,setTimeout(function(){l.revokeObjectURL(m)},4E4)}});f.saveAs=g.saveAs=g,"undefined"!=typeof module&&(module.exports=g)});
+
+
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],29:[function(require,module,exports){
 // originally pulled out of simple-peer
 
 module.exports = function getBrowserRTC () {
@@ -5824,7 +5871,7 @@ module.exports = function getBrowserRTC () {
   return wrtc
 }
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -5843,7 +5890,7 @@ try {
   module.exports = false;
 }
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -5930,7 +5977,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -5959,7 +6006,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -6123,7 +6170,7 @@ function plural(ms, msAbs, n, name) {
   return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
 }
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -6162,7 +6209,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -6232,7 +6279,7 @@ function queryKey(uri, query) {
     return data;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -6418,7 +6465,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 (function (global){(function (){
 /*! queue-microtask. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 let promise
@@ -6431,7 +6478,7 @@ module.exports = typeof queueMicrotask === 'function'
     .catch(err => setTimeout(() => { throw err }, 0))
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (process,global){(function (){
 'use strict'
 
@@ -6485,7 +6532,7 @@ function randomBytes (size, cb) {
 }
 
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":35,"safe-buffer":53}],38:[function(require,module,exports){
+},{"_process":36,"safe-buffer":54}],39:[function(require,module,exports){
 'use strict';
 
 function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; subClass.__proto__ = superClass; }
@@ -6614,7 +6661,7 @@ createErrorType('ERR_UNKNOWN_ENCODING', function (arg) {
 createErrorType('ERR_STREAM_UNSHIFT_AFTER_END_EVENT', 'stream.unshift() after end event');
 module.exports.codes = codes;
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (process){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -6756,7 +6803,7 @@ Object.defineProperty(Duplex.prototype, 'destroyed', {
   }
 });
 }).call(this)}).call(this,require('_process'))
-},{"./_stream_readable":41,"./_stream_writable":43,"_process":35,"inherits":31}],40:[function(require,module,exports){
+},{"./_stream_readable":42,"./_stream_writable":44,"_process":36,"inherits":32}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6796,7 +6843,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":42,"inherits":31}],41:[function(require,module,exports){
+},{"./_stream_transform":43,"inherits":32}],42:[function(require,module,exports){
 (function (process,global){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -7923,7 +7970,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":38,"./_stream_duplex":39,"./internal/streams/async_iterator":44,"./internal/streams/buffer_list":45,"./internal/streams/destroy":46,"./internal/streams/from":48,"./internal/streams/state":50,"./internal/streams/stream":51,"_process":35,"buffer":6,"events":27,"inherits":31,"string_decoder/":64,"util":5}],42:[function(require,module,exports){
+},{"../errors":39,"./_stream_duplex":40,"./internal/streams/async_iterator":45,"./internal/streams/buffer_list":46,"./internal/streams/destroy":47,"./internal/streams/from":49,"./internal/streams/state":51,"./internal/streams/stream":52,"_process":36,"buffer":6,"events":27,"inherits":32,"string_decoder/":65,"util":5}],43:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -8125,7 +8172,7 @@ function done(stream, er, data) {
   if (stream._transformState.transforming) throw new ERR_TRANSFORM_ALREADY_TRANSFORMING();
   return stream.push(null);
 }
-},{"../errors":38,"./_stream_duplex":39,"inherits":31}],43:[function(require,module,exports){
+},{"../errors":39,"./_stream_duplex":40,"inherits":32}],44:[function(require,module,exports){
 (function (process,global){(function (){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -8825,7 +8872,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../errors":38,"./_stream_duplex":39,"./internal/streams/destroy":46,"./internal/streams/state":50,"./internal/streams/stream":51,"_process":35,"buffer":6,"inherits":31,"util-deprecate":65}],44:[function(require,module,exports){
+},{"../errors":39,"./_stream_duplex":40,"./internal/streams/destroy":47,"./internal/streams/state":51,"./internal/streams/stream":52,"_process":36,"buffer":6,"inherits":32,"util-deprecate":66}],45:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -9035,7 +9082,7 @@ var createReadableStreamAsyncIterator = function createReadableStreamAsyncIterat
 
 module.exports = createReadableStreamAsyncIterator;
 }).call(this)}).call(this,require('_process'))
-},{"./end-of-stream":47,"_process":35}],45:[function(require,module,exports){
+},{"./end-of-stream":48,"_process":36}],46:[function(require,module,exports){
 'use strict';
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -9246,7 +9293,7 @@ function () {
 
   return BufferList;
 }();
-},{"buffer":6,"util":5}],46:[function(require,module,exports){
+},{"buffer":6,"util":5}],47:[function(require,module,exports){
 (function (process){(function (){
 'use strict'; // undocumented cb() API, needed for core, not for public API
 
@@ -9354,7 +9401,7 @@ module.exports = {
   errorOrDestroy: errorOrDestroy
 };
 }).call(this)}).call(this,require('_process'))
-},{"_process":35}],47:[function(require,module,exports){
+},{"_process":36}],48:[function(require,module,exports){
 // Ported from https://github.com/mafintosh/end-of-stream with
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
@@ -9459,12 +9506,12 @@ function eos(stream, opts, callback) {
 }
 
 module.exports = eos;
-},{"../../../errors":38}],48:[function(require,module,exports){
+},{"../../../errors":39}],49:[function(require,module,exports){
 module.exports = function () {
   throw new Error('Readable.from is not available in the browser')
 };
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 // Ported from https://github.com/mafintosh/pump with
 // permission from the author, Mathias Buus (@mafintosh).
 'use strict';
@@ -9562,7 +9609,7 @@ function pipeline() {
 }
 
 module.exports = pipeline;
-},{"../../../errors":38,"./end-of-stream":47}],50:[function(require,module,exports){
+},{"../../../errors":39,"./end-of-stream":48}],51:[function(require,module,exports){
 'use strict';
 
 var ERR_INVALID_OPT_VALUE = require('../../../errors').codes.ERR_INVALID_OPT_VALUE;
@@ -9590,10 +9637,10 @@ function getHighWaterMark(state, options, duplexKey, isDuplex) {
 module.exports = {
   getHighWaterMark: getHighWaterMark
 };
-},{"../../../errors":38}],51:[function(require,module,exports){
+},{"../../../errors":39}],52:[function(require,module,exports){
 module.exports = require('events').EventEmitter;
 
-},{"events":27}],52:[function(require,module,exports){
+},{"events":27}],53:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -9604,7 +9651,7 @@ exports.PassThrough = require('./lib/_stream_passthrough.js');
 exports.finished = require('./lib/internal/streams/end-of-stream.js');
 exports.pipeline = require('./lib/internal/streams/pipeline.js');
 
-},{"./lib/_stream_duplex.js":39,"./lib/_stream_passthrough.js":40,"./lib/_stream_readable.js":41,"./lib/_stream_transform.js":42,"./lib/_stream_writable.js":43,"./lib/internal/streams/end-of-stream.js":47,"./lib/internal/streams/pipeline.js":49}],53:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":40,"./lib/_stream_passthrough.js":41,"./lib/_stream_readable.js":42,"./lib/_stream_transform.js":43,"./lib/_stream_writable.js":44,"./lib/internal/streams/end-of-stream.js":48,"./lib/internal/streams/pipeline.js":50}],54:[function(require,module,exports){
 /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
@@ -9671,7 +9718,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":6}],54:[function(require,module,exports){
+},{"buffer":6}],55:[function(require,module,exports){
 /*! simple-peer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 const debug = require('debug')('simple-peer')
 const getBrowserRTC = require('get-browser-rtc')
@@ -10725,7 +10772,7 @@ Peer.channelConfig = {}
 
 module.exports = Peer
 
-},{"buffer":6,"debug":8,"err-code":26,"get-browser-rtc":28,"queue-microtask":36,"randombytes":37,"readable-stream":52}],55:[function(require,module,exports){
+},{"buffer":6,"debug":8,"err-code":26,"get-browser-rtc":29,"queue-microtask":37,"randombytes":38,"readable-stream":53}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.io = exports.Socket = exports.Manager = exports.protocol = void 0;
@@ -10798,7 +10845,7 @@ var socket_1 = require("./socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return socket_1.Socket; } });
 exports.default = lookup;
 
-},{"./manager":56,"./socket":58,"./url":60,"debug":8,"socket.io-parser":62}],56:[function(require,module,exports){
+},{"./manager":57,"./socket":59,"./url":61,"debug":8,"socket.io-parser":63}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manager = void 0;
@@ -11175,7 +11222,7 @@ class Manager extends typed_events_1.StrictEventEmitter {
 }
 exports.Manager = Manager;
 
-},{"./on":57,"./socket":58,"./typed-events":59,"backo2":2,"debug":8,"engine.io-client":11,"socket.io-parser":62}],57:[function(require,module,exports){
+},{"./on":58,"./socket":59,"./typed-events":60,"backo2":2,"debug":8,"engine.io-client":11,"socket.io-parser":63}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.on = void 0;
@@ -11187,7 +11234,7 @@ function on(obj, ev, fn) {
 }
 exports.on = on;
 
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
@@ -11649,7 +11696,7 @@ class Socket extends typed_events_1.StrictEventEmitter {
 }
 exports.Socket = Socket;
 
-},{"./on":57,"./typed-events":59,"debug":8,"socket.io-parser":62}],59:[function(require,module,exports){
+},{"./on":58,"./typed-events":60,"debug":8,"socket.io-parser":63}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StrictEventEmitter = void 0;
@@ -11723,7 +11770,7 @@ class StrictEventEmitter extends Emitter {
 }
 exports.StrictEventEmitter = StrictEventEmitter;
 
-},{"component-emitter":7}],60:[function(require,module,exports){
+},{"component-emitter":7}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.url = void 0;
@@ -11791,7 +11838,7 @@ function url(uri, path = "", loc) {
 }
 exports.url = url;
 
-},{"debug":8,"parseuri":34}],61:[function(require,module,exports){
+},{"debug":8,"parseuri":35}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reconstructPacket = exports.deconstructPacket = void 0;
@@ -11873,7 +11920,7 @@ function _reconstructPacket(data, buffers) {
     return data;
 }
 
-},{"./is-binary":63}],62:[function(require,module,exports){
+},{"./is-binary":64}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Decoder = exports.Encoder = exports.PacketType = exports.protocol = void 0;
@@ -12155,7 +12202,7 @@ class BinaryReconstructor {
     }
 }
 
-},{"./binary":61,"./is-binary":63,"component-emitter":7,"debug":8}],63:[function(require,module,exports){
+},{"./binary":62,"./is-binary":64,"component-emitter":7,"debug":8}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hasBinary = exports.isBinary = void 0;
@@ -12212,7 +12259,7 @@ function hasBinary(obj, toJSON) {
 }
 exports.hasBinary = hasBinary;
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12509,7 +12556,7 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"safe-buffer":53}],65:[function(require,module,exports){
+},{"safe-buffer":54}],66:[function(require,module,exports){
 (function (global){(function (){
 
 /**
@@ -12580,7 +12627,7 @@ function config (name) {
 }
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
