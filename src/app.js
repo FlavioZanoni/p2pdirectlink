@@ -1,7 +1,6 @@
 // imports
 const io = require("socket.io-client")
 const Peer = require("simple-peer")
-const saveAs = require("file-saver")
 const socket = io("https://sleepy-hamlet-10685.herokuapp.com/", { transports: ["websocket"] })
 
 // globals
@@ -18,7 +17,10 @@ let user = {
     "data": "",
     "hash": ""
 }
-let mime;
+
+//workersT
+const sendWorker = new Worker('/src/sendWorker.js')
+const reciveWorker = new Worker('/src/reciveWorker.js')
 
 // making sure the page doesn't load with the index in the href
 if (window.location.href == window.location.origin + "/index.html") {
@@ -111,46 +113,13 @@ if (Peer.WEBRTC_SUPPORT) {
 
                 emitUser()
                 document.getElementById("submit").addEventListener('click', () => {
-                    // gets file
-                    let chunkSize = 200000
                     let file = document.getElementById("file-upload").files[0]
-                    let reader = new FileReader()
-
-                    reader.readAsDataURL(file)
-                    reader.onload = function () {
-                        let fileSize = reader.result.length
-
-                        if (fileSize < chunkSize) {
-                            console.log(reader.result)
-                            peerHost.send(reader.result)
-                            console.log(file.type)
-                            peerHost.send("d")
-                        } else {
-                            // sends file pieces of 200kb for the peer
-                            for (let start = 0; start < fileSize; start += chunkSize) {
-                                let result = reader.result
-                                let chunk
-                                console.log(start)
-                                // checks the if the chunk gonna be full size or not
-                                if (chunkSize > fileSize - start) {
-                                    console.log("smallerchunk")
-                                    let final = start + (fileSize - start)
-
-                                    chunk = result.slice(start, final)
-                                    peerHost.send(chunk)
-
-                                    console.count("enviado")
-                                } else {
-                                    chunk = result.slice(start, start + chunkSize)
-                                    peerHost.send(chunk)
-                                    console.count("enviado2")
-                                }
-                            }
-                            // when finishes sending the pieces, send a "d" of done
-                            peerHost.send("d")
-                        }
-                    }
+                    sendWorker.postMessage(file)
                 })
+
+                sendWorker.onmessage = function(chunk) {
+                    peerHost.send(chunk.data)
+                }
             })
 
         } else {
@@ -158,7 +127,7 @@ if (Peer.WEBRTC_SUPPORT) {
             userServer.hash = window.location.hash
 
             user.hash = window.location.hash
-            peer = new Peer({
+            peer = new Peer({   
                 initiator: false,
                 //enables ICE
                 trickle: false,
@@ -256,32 +225,15 @@ if (Peer.WEBRTC_SUPPORT) {
             peer.on('data', data => {
                 if (data.length == 1 && data[0] == 100) {
                     console.log("file is done")
-                    concat(uintArr)
+                    reciveWorker.postMessage(uintArr)
                 } else {
                     uintArr.push(data)
                 }
 
                 // concat and convert it to dataURL
-                function concat(arrays) {
-                    // sum of individual array lengths
-                    let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-                    
-                    if (!arrays.length) return null;
-                    
-                    let result = new Uint8Array(totalLength);
-                    
-                    // for each array - copy it over result
-                    // next array is copied right after the previous one
-                    let length = 0;
-                    for(let array of arrays) {
-                        result.set(array, length);
-                        length += array.length;
-                    }
-                    
-                    let link = new TextDecoder("utf-8").decode(result)
-                    console.log(link)
-                    createHTML(link)
-                } 
+                reciveWorker.onmessage = function (msg) {
+                    createHTML(msg.data)
+                }
             })
         })
 
