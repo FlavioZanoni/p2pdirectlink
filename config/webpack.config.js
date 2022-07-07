@@ -54,7 +54,6 @@ const disableESLintPlugin = process.env.DISABLE_ESLINT_PLUGIN === 'true';
 const imageInlineSizeLimit = parseInt(
   process.env.IMAGE_INLINE_SIZE_LIMIT || '10000'
 );
-new webpack.EnvironmentPlugin(['NODE_ENV', 'DEBUG']);
 
 // Check if TypeScript is setup
 const useTypeScript = fs.existsSync(paths.appTsConfig);
@@ -564,6 +563,9 @@ module.exports = function (webpackEnv) {
       ].filter(Boolean),
     },
     plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
       // Generates an `index.html` file with the <script> injected.
       new HtmlWebpackPlugin(
         Object.assign(
