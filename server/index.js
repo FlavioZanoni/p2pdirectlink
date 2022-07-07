@@ -3,7 +3,6 @@ const httpServer = require("http").createServer(app)
 const options = { /* https://socket.io/docs/v4/server-initialization/#Options */ }
 const io = require("socket.io")(httpServer, options)
 
-let exist
 let users = []
 
 io.on("connection", socket => {
@@ -13,14 +12,17 @@ io.on("connection", socket => {
     socket.on("user", (user) => {
         if (user.initiator == true) {
             //send user id to array
-            users.push(user.id)
+            users.push({ hash: user.hash, id: user.id })
         }
 
         if (user.initiator == false) {
+            let exist;
+            let ind;
             // checks if id exist
-            users.forEach(element => {
-                if (user.hash == element) {
+            users.forEach((element, index) => {
+                if (user.hash == element.hash) {
                     exist = true
+                    ind = index
                 } else {
                     exist = false
                 }
@@ -30,8 +32,7 @@ io.on("connection", socket => {
                 socket.emit("accepted")
 
                 // asks data to the host peer
-                let id = user.hash.slice(1, user.hash.length)
-                socket.to(id).emit("needData", socket.id)
+                socket.to(users[ind].id).emit("needData", socket.id)
 
             } else {
                 console.log("this id does not exist")
@@ -47,6 +48,7 @@ io.on("connection", socket => {
 
     // send receiver data to the host
     socket.on("receiverData", (id, user) => {
+        console.log(id, user)
         socket.to(id).emit("receiverConnect", user)
     })
 
