@@ -2,26 +2,26 @@ import { Link } from "react-router-dom";
 
 export default function About() {
     return (
-        <nav className="flex min-h-screen w-16 bg-[#292929] p-4 mr-2 justify-center items-center">
+        <aside className="flex min-h-screen w-14 bg-[#292929] p-4 mr-2 justify-center items-center">
             <ul>
-                <li>
+                <li className="w-10">
                     <Link to="/">
-                        <img src="#" alt="logo" />
+                        <img src="/logo.svg" alt="logo" />
                     </Link>
                 </li>
                 <hr className="m-1" />
-                <li>
+                {/* <li>
                     <Link to="/receive">
                         <img src="#" alt="receive" />
                     </Link>
                 </li>
-                <hr className="m-1" />
-                <li>
+                <hr className="m-1" /> */}
+                <li className="w-10">
                     <Link to="/about">
-                        <img src="#" alt="about" />
+                        <img src="/about.png" alt="about" />
                     </Link>
                 </li>
             </ul>
-        </nav>
+        </aside>
     )
 }

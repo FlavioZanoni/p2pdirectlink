@@ -4,19 +4,22 @@ import Receive from "./pages/Receive"
 import Send from "./pages/Send"
 import { Routes, Route } from "react-router-dom"
 import Navbar from './components/Navbar'
+import SocketContext, { socket } from "./lib/socket";
 
 function App() {
   return (
-    <div className="flex flex-row">
-      <Navbar />
-      <main>
-        <Routes>
-          <Route path={'/'} element={<Send />} />
-          <Route path={'/receive'} element={<Receive />} />
-          <Route path={'/about'} element={<About />} />
-        </Routes>
+    <SocketContext.Provider value={socket}>
+      <main className="flex flex-row bg-[#525252]">
+        <Navbar />
+        <section className="flex grow ">
+          <Routes>
+            <Route path={'/'} element={<Send />} />
+            <Route path={'/receive'} element={<Receive />} />
+            <Route path={'/about'} element={<About />} />
+          </Routes>
+        </section>
       </main>
-    </div>
+    </SocketContext.Provider>
   );
 }
 

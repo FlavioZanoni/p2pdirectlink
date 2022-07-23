@@ -7,7 +7,6 @@ let users = []
 
 io.on("connection", socket => {
     console.log('[io]=> User has connected')
-
     // user entering the website
     socket.on("user", (user) => {
         if (user.initiator == true) {
@@ -48,7 +47,6 @@ io.on("connection", socket => {
 
     // send receiver data to the host
     socket.on("receiverData", (id, user) => {
-        console.log(id, user)
         socket.to(id).emit("receiverConnect", user)
     })
 

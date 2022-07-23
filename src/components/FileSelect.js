@@ -5,7 +5,6 @@ import convertToDataUrl from "../lib/convertDataUrl"
 export default function FileSelect(props) {
     // set loading img first
     const [src, setSrc] = useState(['/mugi.png'])
-    const [deleting, setDeleting] = useState(false)
 
     useEffect(() => {
         console.log(props.files)
@@ -14,35 +13,51 @@ export default function FileSelect(props) {
             let newIndex = props.files.length - 1
 
             const updateSrc = async () => {
-                console.log('to fazendo updare fds')
 
-                let regImage = /(image)/.test(props.files[newIndex].type)
-                if (regImage) {
+                if (/(image)/.test(props.files[newIndex].type)) {
                     setSrc([...src, await convertToDataUrl(props.files[newIndex])])
-                    setDeleting(false)
+                } else if (/(pdf)/.test(props.files[newIndex].type)) {
+                    setSrc([...src, '/fileType/pdf.png'])
+                } else if (/(doc)|(docx)/.test(props.files[newIndex].type)) {
+                    setSrc([...src, '/fileType/doc.png'])
+                } else if (/(rar)|(zip)/.test(props.files[newIndex].type)) {
+                    setSrc([...src, '/fileType/zip.png'])
+                } else if (/(mp3)/.test(props.files[newIndex].type)) {
+                    setSrc([...src, '/fileType/mp3.png'])
+                } else {
+                    setSrc([...src, '/fileType/file.png'])
                 }
             }
             updateSrc()
         }
-    }, [props.files, deleting])
+    }, [props.files])
 
     async function handleDeleteFile(e, index) {
-        setDeleting(true)
         e.stopPropagation() // stop the component from opening dialog for new file
-        src.splice(index + 1, 1)
-        props.files.splice(index, 1)
+        src.splice(index + 1, 1) // removes the element from the src array
+        setSrc([...src]) // updates the src element
+        props.files.splice(index, 1) // remove it from the file array
     }
 
     return (
-        <div className='flex flex-row'>
+        <div className='flex flex-row overflow-x-auto max-w-3xl'>
             {
                 props.files.map((file, index) => {
                     return (
-                        <div key={index} className='m-1' >
-                            <button type='button' onClick={(e) => handleDeleteFile(e, index)} className='bg-red-500 rounded-full p-1 m-1'> X </button>
-                            <img width={150} height={150} src={src[index + 1]} alt="uploaded file" />
-                            <p>{file.name}</p>
+                        <div className="flex justify-end relative h-[200px] w-[170px] m-2" key={index}>
+                            <div className="flex items-center absolute justify-center  w-11 drop-shadow-xl bg-[#3f3f3f] text-red-500 rounded-sm">
+                                <div>
+                                    <button type='button' onClick={(e) => handleDeleteFile(e, index)} className=' p-1 '>
+                                        <img src="/bin.svg" height={18} width={18} alt="" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div key={index} className='flex flex-col  items-center justify-center bg-[#525252] rounded-md p-2 m-1 ' >
+                                <img className="max-w-[150px] max-h-[150px]" src={src[index + 1]} alt="uploaded file" />
+                                <p className="max-w-[9rem] truncate ...">{file.name}</p>
+                            </div>
                         </div>
+
                     )
                 })
             }

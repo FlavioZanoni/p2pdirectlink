@@ -1,35 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import DropFile from "../components/DropFile";
-import { initializePeer, initializeSocket } from "../lib/initializers";
+import { initializePeer } from "../lib/initializers";
 import { SHA1 } from "crypto-js";
+import { Btn, WaitBtn } from "../components/Button";
+import SocketContext from "../lib/socket";
+import { wrap } from "comlink";
+import { sender } from "../lib/sender";
 
-const socket = initializeSocket()
 const peer = initializePeer(true, false)
 
 export default function Send() {
-
+    const socket = useContext(SocketContext);
     const [id, setId] = useState('')
+    const [connected, setConnected] = useState(false)
 
-    socket.on("connect", () => {
-        console.log('[io] => connected on the serverside')
-        console.log("[io] => socket id = ", socket.id)
-        listen(SHA1(socket.id).toString().slice(0, 5))
-        setId(SHA1(socket.id).toString().slice(0, 5))
-    })
-    function listen(id) {
+    useEffect(() => {
+        socket.on("connect", () => {
+            console.log('[io] => connected on the serverside')
+            console.log("[io] => socket id = ", socket.id)
+            setId(SHA1(socket.id).toString().slice(0, 5))
+            sendUser(SHA1(socket.id).toString().slice(0, 5))
+        })
+        peer.on('signal', data => {
+            listen(data)
+        })
+    }, [])
 
-        let peerData = ''
-        // sends the connection id, its own id, and if its an initiator or not
+
+    // sends the connection id, its own id, and if its an initiator or not
+    const sendUser = (id) => {
+        console.log(socket.id)
         socket.emit('user', {
             initiator: true,
             id: socket.id,
             hash: '#' + id
         })
+    }
 
-        peer.on('signal', data => {
-            peerData = data
-            console.log(data)
-        })
+    const listen = (peerData) => {
+
         socket.on("needData", (id) => {
             console.log('needData')
             socket.emit("hostData", id, {
@@ -39,10 +48,11 @@ export default function Send() {
             })
         })
 
-        socket.on('receiverConnect', (user) => {
-            console.log("user receiver data: ", user)
-            peer.signal(user)
+        socket.on('receiverConnect', (host) => {
+            console.log("user receiver data: ", host)
+            peer.signal(host)
             peer.on('connect', () => {
+                setConnected(true)
                 console.log("[peerHost] = Connected with peer receiver")
                 window.alert("receiver connected")
                 // terminates the socket
@@ -53,11 +63,30 @@ export default function Send() {
         })
     }
 
+    const handleSubmit = async () => {
+
+        for (let c = 0; c < files.length; c++) {
+            sender(peer, files[c])
+        }
+    }
+
+    const [files, setFiles] = useState([])
+
     return (
-        <>
-            <DropFile />
+        <div className="text-center flex flex-col justify-center items-center mx-auto">
+            <DropFile files={files} setFiles={setFiles} />
+
+            <p>your link:</p>
+            <p className="w-[36rem] p-2 rounded-md bg-[#C4C4C4]" >{`http://localhost:3000/receive#${id}`}</p>
             <a target="_blank" rel="noreferrer" href={`http://localhost:3000/receive#${id}`}>link</a>
-        </>
+
+            {
+                connected
+                    ? files.length === 0
+                        ? <WaitBtn content={"Peer connected, input at least one file."} />
+                        : <Btn content={'Send'} func={handleSubmit} />
+                    : <WaitBtn content={"Waiting other peer to connect..."} />
+            }
+        </div >
     )
 }
-
