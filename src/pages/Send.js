@@ -4,7 +4,6 @@ import { initializePeer } from "../lib/initializers";
 import { SHA1 } from "crypto-js";
 import { Btn, WaitBtn } from "../components/Button";
 import SocketContext from "../lib/socket";
-import { wrap } from "comlink";
 import { sender } from "../lib/sender";
 
 const peer = initializePeer(true, false)
@@ -64,7 +63,6 @@ export default function Send() {
     }
 
     const handleSubmit = async () => {
-
         for (let c = 0; c < files.length; c++) {
             sender(peer, files[c])
         }
@@ -75,7 +73,6 @@ export default function Send() {
     return (
         <div className="text-center flex flex-col justify-center items-center mx-auto">
             <DropFile files={files} setFiles={setFiles} />
-
             <p>your link:</p>
             <p className="w-[36rem] p-2 rounded-md bg-[#C4C4C4]" >{`http://localhost:3000/receive#${id}`}</p>
             <a target="_blank" rel="noreferrer" href={`http://localhost:3000/receive#${id}`}>link</a>
