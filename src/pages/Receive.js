@@ -59,6 +59,7 @@ export default function Receive() {
 
         let uintArr = []
         peer.on('data', (data) => {
+            console.log(data)
             //checks if the final message is an unit8 array of the letter "d" sent as the last message
             if (data.length === 1 && data[0] === 100) {
                 console.log("file is done")
@@ -82,7 +83,7 @@ export default function Receive() {
                     result.set(array, length);
                     length += array.length;
                 }
-
+                console.log("res", result)
                 let link = new TextDecoder("utf-8").decode(result)
                 setUrl(link)
                 console.log(link)
