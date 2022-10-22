@@ -4,7 +4,7 @@ import { initializePeer } from "../lib/initializers";
 import { SHA1 } from "crypto-js";
 import { Btn, WaitBtn } from "../components/Button";
 import SocketContext from "../lib/socket";
-import { sender } from "../lib/sender";
+import sendWorker from "../lib/sendWorker.js";
 
 const peer = initializePeer(true, false)
 
@@ -12,6 +12,7 @@ export default function Send() {
     const socket = useContext(SocketContext);
     const [id, setId] = useState('')
     const [connected, setConnected] = useState(false)
+    const worker = new Worker(sendWorker);
 
     useEffect(() => {
         socket.on("connect", () => {
@@ -25,10 +26,8 @@ export default function Send() {
         })
     }, [])
 
-
     // sends the connection id, its own id, and if its an initiator or not
     const sendUser = (id) => {
-        console.log(socket.id)
         socket.emit('user', {
             initiator: true,
             id: socket.id,
@@ -39,7 +38,6 @@ export default function Send() {
     const listen = (peerData) => {
 
         socket.on("needData", (id) => {
-            console.log('needData')
             socket.emit("hostData", id, {
                 id: socket.id,
                 data: peerData,
@@ -64,7 +62,10 @@ export default function Send() {
 
     const handleSubmit = async () => {
         for (let c = 0; c < files.length; c++) {
-            sender(peer, files[c])
+            worker.postMessage({ file: files[c] })
+            worker.onmessage = msg => {
+                peer.write(msg.data)
+            }
         }
     }
 
@@ -84,6 +85,6 @@ export default function Send() {
                         : <Btn content={'Send'} func={handleSubmit} />
                     : <WaitBtn content={"Waiting other peer to connect..."} />
             }
-        </div >
+        </div>
     )
 }

@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react"
-import convertToDataUrl from "../lib/convertDataUrl"
+import { convertToDataUrl } from "../lib/converters"
 
 export default function FileSelect(props) {
     // set loading img first
