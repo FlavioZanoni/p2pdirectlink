@@ -2,13 +2,20 @@ import { useEffect, useContext, useState } from "react";
 import { initializePeer } from "../lib/initializers";
 import SocketContext from "../lib/socket";
 import { Link } from "react-router-dom";
+import receiveWorker from "../lib/receiveWorker.js";
+import { convertToDataUrl } from "../lib/converters";
 
 const peer = initializePeer(false, false)
 
 export default function Receive() {
+    const worker = new Worker(receiveWorker);
+
     const socket = useContext(SocketContext);
-    const [file, setFile] = useState(false)
     const [notFound, setNotFound] = useState(false)
+    const [urls, setUrls] = useState([])
+    const [fileNames, setFileNames] = useState([])
+
+
     useEffect(() => {
         let hash = window.location.hash
         socket.on("connect", () => {
@@ -56,48 +63,31 @@ export default function Receive() {
                 })
             })
         })
-
-        let uintArr = []
+        const uintArr = []
+        let props;
         peer.on('data', (data) => {
-            console.log(data)
-            //checks if the final message is an unit8 array of the letter "d" sent as the last message
-            if (data.length === 1 && data[0] === 100) {
+            if (uintArr.length === 0 && !props) {
+                props = new TextDecoder("utf-8").decode(data)
+                return
+            }
+            if (data.length == 1 && data[0] == 100) {
                 console.log("file is done")
-                decode(uintArr)
+                worker.postMessage({ data: uintArr, props: props })
             } else {
                 uintArr.push(data)
-            }
-
-            function decode(arrays) {
-                // sum of individual array lengths
-                let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-
-                if (!arrays.length) return null;
-
-                let result = new Uint8Array(totalLength);
-
-                // for each array - copy it over result
-                // next array is copied right after the previous one
-                let length = 0;
-                for (let array of arrays) {
-                    result.set(array, length);
-                    length += array.length;
-                }
-                console.log("res", result)
-                let link = new TextDecoder("utf-8").decode(result)
-                setUrl(link)
-                console.log(link)
-                setFile(true)
             }
         })
     }
 
-    const [url, setUrl] = useState('')
+    worker.onmessage = async msg => {
+        const result = msg.data.blob
+        const link = await convertToDataUrl(result)
+        setUrls([...urls, link])
+        setFileNames([...fileNames, msg.data.name])
+    }
 
     return (
         <div className="text-center flex flex-col justify-center mx-auto">
-
-
             {
                 notFound ? (
                     <>
@@ -118,15 +108,18 @@ export default function Receive() {
 
                 ) : (
                     <div className="flex bg-[#333333] h-[24rem] w-[48rem] justify-center items-center">
-
                         {
-                            file ? (
-                                <div>
-                                    <img src={url} alt="uploaded image" />
-                                    <a download='peerFile' href={url}> Download</a>
-                                </div>
-                            )
-                                : <p>Waiting for file (later is an animation)</p>
+                            urls.length !== 0 ? (
+                                urls.map((url, idx) => {
+                                    return (
+                                        <div key={idx}>
+                                            <img src={url} alt={fileNames[idx]} />
+                                            <a download={fileNames[idx]} href={url}> Download</a>
+                                        </div>
+                                    )
+                                })
+
+                            ) : <p>there is no file</p>
                         }
                     </div>
                 )

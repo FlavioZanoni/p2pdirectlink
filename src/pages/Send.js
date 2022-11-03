@@ -5,7 +5,6 @@ import { SHA1 } from "crypto-js";
 import { Btn, WaitBtn } from "../components/Button";
 import SocketContext from "../lib/socket";
 import sendWorker from "../lib/sendWorker.js";
-
 const peer = initializePeer(true, false)
 
 export default function Send() {
@@ -62,9 +61,25 @@ export default function Send() {
 
     const handleSubmit = async () => {
         for (let c = 0; c < files.length; c++) {
-            worker.postMessage({ file: files[c] })
+            const buffered = await files[c].arrayBuffer()
+
+            if (files[c].size < 200000) {
+                console.log('sended')
+                peer.write(JSON.stringify({ name: files[c].name, type: files[c].type }), { encoding: 'utf-8' })
+                peer.write(new Uint8Array(buffered))
+                peer.send(`d`)
+            } else {
+                worker.postMessage(files[c], [buffered])
+            }
+
             worker.onmessage = msg => {
-                peer.write(msg.data)
+                if (msg.data !== "d") {
+                    const buffer = msg.data
+                    const view = new Uint8Array(buffer)
+                    peer.write(view)
+                } else {
+                    peer.write('d')
+                }
             }
         }
     }
