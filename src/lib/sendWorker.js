@@ -1,35 +1,35 @@
 //thanks to https://codesandbox.io/s/web-worker-reactjs-2sswe
 
 const worker = async () => {
-    const chunkSize = 200000
-    onmessage = async function (e) {
+	const chunkSize = 200000
+	onmessage = async function (e) {
 
-        const file = e.data
-        const fileSize = file.size
+		const file = e.data
+		const fileSize = file.size
 
-        console.log(file)
+		console.log(file)
 
-        this.postMessage({ name: file.name, type: file.type })
+		this.postMessage({ name: file.name, type: file.type })
 
-        for (let start = 0; start < fileSize; start += chunkSize) {
-            if (chunkSize > fileSize - start) {
-                console.log("smallerchunk")
-                const final = start + (fileSize - start)
-                const buffer = await file.slice(start, final).arrayBuffer()
-                this.postMessage(buffer, [buffer])
-            } else {
-                console.count('chunk: ')
-                const buffer = await file.slice(start, start + chunkSize).arrayBuffer()
-                this.postMessage(buffer, [buffer])
-            }
-        }
-        this.postMessage('d')
-    };
-};
+		for (let start = 0; start < fileSize; start += chunkSize) {
+			if (chunkSize > fileSize - start) {
+				console.log("smallerchunk")
+				const final = start + (fileSize - start)
+				const buffer = await file.slice(start, final).arrayBuffer()
+				this.postMessage(buffer, [buffer])
+			} else {
+				console.count("chunk: ")
+				const buffer = await file.slice(start, start + chunkSize).arrayBuffer()
+				this.postMessage(buffer, [buffer])
+			}
+		}
+		this.postMessage("d")
+	}
+}
 
-let code = worker.toString();
-code = code.substring(code.indexOf("{") + 1, code.lastIndexOf("}"));
-const blob = new Blob([code], { type: "application/javascript" });
-const sendWorker = URL.createObjectURL(blob);
+let code = worker.toString()
+code = code.substring(code.indexOf("{") + 1, code.lastIndexOf("}"))
+const blob = new Blob([code], { type: "application/javascript" })
+const sendWorker = URL.createObjectURL(blob)
 console.log(sendWorker)
-export default sendWorker;
+export default sendWorker

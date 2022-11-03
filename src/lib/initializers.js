@@ -1,4 +1,4 @@
-import SimplePeer from "simple-peer";
+import SimplePeer from "simple-peer"
 
 /**
  * @param {Boolean} initiator - is this the initiator peer ? true : false
@@ -6,14 +6,15 @@ import SimplePeer from "simple-peer";
  * @returns the peer instance
  */
 function initializePeer(initiator, trickle) {
-    const peer = new SimplePeer({
-        initiator: initiator,
-        trickle: trickle,
-        stream: false,
-    })
+	const peer = new SimplePeer({
+		initiator: initiator,
+		trickle: trickle,
+		stream: false,
+	})
 
-    return peer
+	return peer
 }
 
 
 export { initializePeer }
+
