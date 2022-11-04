@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { convertToDataUrl } from "../lib/converters"
 import { initializePeer } from "../lib/initializers"
-import receiveWorker from "../lib/receiveWorker.js"
+import receiveWorker from "../lib/receiveWorker"
 import SocketContext from "../lib/socket"
 
 const peer = initializePeer(false, false)

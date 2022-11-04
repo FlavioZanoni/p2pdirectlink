@@ -1,9 +1,9 @@
 import { SHA1 } from "crypto-js"
 import React, { useContext, useEffect, useState } from "react"
 import { Btn, WaitBtn } from "../components/Button"
-import DropFile from "../components/DropFile"
+import { DropFile } from "../components/DropFile"
 import { initializePeer } from "../lib/initializers"
-import sendWorker from "../lib/sendWorker.js"
+import sendWorker from "../lib/sendWorker"
 import SocketContext from "../lib/socket"
 const peer = initializePeer(true, false)
 
@@ -12,6 +12,7 @@ export default function Send() {
 	const [id, setId] = useState("")
 	const [connected, setConnected] = useState(false)
 	const worker = new Worker(sendWorker)
+	const [files, setFiles] = useState([])
 
 	useEffect(() => {
 		socket.on("connect", () => {
@@ -84,7 +85,6 @@ export default function Send() {
 		}
 	}
 
-	const [files, setFiles] = useState([])
 
 	return (
 		<div className="text-center flex flex-col justify-center items-center mx-auto">

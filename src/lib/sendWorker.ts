@@ -16,11 +16,16 @@ const worker = async () => {
 				console.log("smallerchunk")
 				const final = start + (fileSize - start)
 				const buffer = await file.slice(start, final).arrayBuffer()
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore: Unreachable code error
 				this.postMessage(buffer, [buffer])
 			} else {
 				console.count("chunk: ")
-				const buffer = await file.slice(start, start + chunkSize).arrayBuffer()
-				this.postMessage(buffer, [buffer])
+				const buffer: ArrayBuffer = await file.slice(start, start + chunkSize).arrayBuffer()
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore: Unreachable code error
+				this.postMessage(buffer, [buffer]) 
+				console.log("btlen", buffer.byteLength)
 			}
 		}
 		this.postMessage("d")

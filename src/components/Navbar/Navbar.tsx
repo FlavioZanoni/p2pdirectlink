@@ -1,7 +1,7 @@
 import React from "react"
 import { Link } from "react-router-dom"
 
-export default function About() {
+export const Navbar = () => {
 	return (
 		<aside className="flex min-h-screen w-14 bg-[#292929] p-4 mr-2 justify-center items-center">
 			<ul>

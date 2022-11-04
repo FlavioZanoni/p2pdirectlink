@@ -1,14 +1,15 @@
 import React, { useCallback } from "react"
 import { useDropzone } from "react-dropzone"
-import FileSelect from "./FileSelect"
+import FileSelect from "../FileSelect/FileSelect"
+import { DropFilesTypes } from "./types"
 
-export default function DropFile({ files, setFiles }) {
+export const DropFile = ({ files, setFiles }: DropFilesTypes) => {
 
-	const onDrop = useCallback((acceptedFiles) => {
-		acceptedFiles.forEach((file) => {
-			setFiles([...files, file])
-		}, [])
-	})
+	const onDrop = useCallback((acceptedFiles: Array<File>) => {
+		acceptedFiles.map((file) => {
+			setFiles([...files  , file] )
+		})
+	}, [files, setFiles])
 
 	const { getRootProps, getInputProps } = useDropzone({ onDrop })
 	return (
@@ -24,4 +25,3 @@ export default function DropFile({ files, setFiles }) {
 		</div>
 	)
 }
-

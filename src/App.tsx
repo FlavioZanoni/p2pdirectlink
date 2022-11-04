@@ -1,6 +1,6 @@
 import React from "react"
 import { Route, Routes } from "react-router-dom"
-import Navbar from "./components/Navbar"
+import { Navbar } from "./components/Navbar"
 import SocketContext, { socket } from "./lib/socket"
 import About from "./pages/About"
 import Receive from "./pages/Receive"

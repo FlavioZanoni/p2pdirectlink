@@ -1,21 +1,20 @@
 
 import React, { useEffect, useState } from "react"
-import { convertToDataUrl } from "../lib/converters"
+import { convertToDataUrl } from "../../lib/converters"
 
-export default function FileSelect(props) {
+export default function FileSelect(props: any) {
 	// set loading img first
-	const [src, setSrc] = useState(["/mugi.png"])
+	const [src, setSrc] = useState<Array<string>>(["/mugi.png"])
 
 	useEffect(() => {
-		console.log(props.files)
 
 		if (props.files.length !== 0) {
-			let newIndex = props.files.length - 1
+			const newIndex = props.files.length - 1
 
 			const updateSrc = async () => {
 
 				if (/(image)/.test(props.files[newIndex].type)) {
-					setSrc([...src, await convertToDataUrl(props.files[newIndex])])
+					setSrc([...src, await convertToDataUrl(props.files[newIndex])] )
 				} else if (/(pdf)/.test(props.files[newIndex].type)) {
 					setSrc([...src, "/fileType/pdf.png"])
 				} else if (/(doc)|(docx)/.test(props.files[newIndex].type)) {
@@ -32,7 +31,7 @@ export default function FileSelect(props) {
 		}
 	}, [props.files])
 
-	async function handleDeleteFile(e, index) {
+	async function handleDeleteFile(e: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) {
 		e.stopPropagation() // stop the component from opening dialog for new file
 		src.splice(index + 1, 1) // removes the element from the src array
 		setSrc([...src]) // updates the src element
@@ -42,7 +41,7 @@ export default function FileSelect(props) {
 	return (
 		<div className='flex flex-row overflow-x-auto max-w-3xl'>
 			{
-				props.files.map((file, index) => {
+				props.files.map((file: File, index: number) => {
 					return (
 						<div className="flex justify-end relative h-[200px] w-[170px] m-2" key={index}>
 							<div className="flex items-center absolute justify-center  w-11 drop-shadow-xl bg-[#3f3f3f] text-red-500 rounded-sm">
@@ -57,7 +56,6 @@ export default function FileSelect(props) {
 								<p className="max-w-[9rem] truncate ...">{file.name}</p>
 							</div>
 						</div>
-
 					)
 				})
 			}
