@@ -3,8 +3,8 @@ import SimplePeer from "simple-peer"
 import { PeerDataType } from "../sharedTypes"
 
 export type PeerContextType = {
-  peer?: SimplePeer.Instance,
-  peerData?: PeerDataType,
+  peer?: SimplePeer.Instance
+  peerData?: PeerDataType
   initiator: boolean
   setInitiator: React.Dispatch<React.SetStateAction<boolean>>
 }
@@ -16,28 +16,27 @@ type Props = {
 }
 
 export const PeerProvider: React.FC<Props> = ({ children }) => {
-	const [initiator, setInitiator] = useState(true)
-	const [peer, setPeer] = useState<SimplePeer.Instance>()
-	const [peerData, setPeerData] = useState<PeerDataType>()
+  const [initiator, setInitiator] = useState(true)
+  const [peer, setPeer] = useState<SimplePeer.Instance>()
+  const [peerData, setPeerData] = useState<PeerDataType>()
 
-	useEffect(() => {
-		setPeer(new SimplePeer({ initiator: initiator, trickle:false }))
-	}, [initiator])
+  useEffect(() => {
+    setPeer(new SimplePeer({ initiator: initiator, trickle: false }))
+  }, [initiator])
 
-	useEffect(() => {
-		if (!peer) return
-		initiator && (
-			peer.on("signal", (data: PeerDataType) => {
-				setPeerData(data)
-			})
-		)
-	}, [peer])
+  useEffect(() => {
+    if (!peer) return
+    initiator &&
+      peer.on("signal", (data: PeerDataType) => {
+        setPeerData(data)
+      })
+  }, [peer])
 
-	const values = {
-		peer,
-		peerData,
-		initiator,
-		setInitiator,
-	}
-	return <PeerContext.Provider value={values}>{children}</PeerContext.Provider>
+  const values = {
+    peer,
+    peerData,
+    initiator,
+    setInitiator,
+  }
+  return <PeerContext.Provider value={values}>{children}</PeerContext.Provider>
 }

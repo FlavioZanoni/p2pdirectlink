@@ -4,6 +4,7 @@ const worker = async () => {
 	onmessage = async function (e) {
 		const { data, props } = e.data
 		const result = data.flat()
+		console.log(props)
 		const propsObj = JSON.parse(props)
 
 		const blob = new Blob([result[0]], { type: propsObj.type })

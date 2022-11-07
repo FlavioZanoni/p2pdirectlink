@@ -4,23 +4,23 @@
 
 /* width */
 ::-webkit-scrollbar {
-    width: 2px;
+  width: 2px;
 }
 
 /* Track */
 ::-webkit-scrollbar-track {
-    background: #525252;
-    border-radius: 4px;
+  background: #525252;
+  border-radius: 4px;
 }
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-    background: #3c3c3c;
-    border-radius: 4px;
+  background: #3c3c3c;
+  border-radius: 4px;
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-    transition-timing-function: ease-in-out;
-    background: rgb(50, 50, 50);
+  transition-timing-function: ease-in-out;
+  background: rgb(50, 50, 50);
 }
