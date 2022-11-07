@@ -19,7 +19,7 @@ export default function Send() {
 	useEffect(() => {
 		if(socketConnected) {
 			setId(SHA1(socket?.id as string).toString().slice(0, 5))
-			sendUser()
+			sendUser(SHA1(socket?.id as string).toString().slice(0, 5))
 		}
 	}, [socketConnected])
 
@@ -31,7 +31,7 @@ export default function Send() {
 
 
 	// sends the connection id, its own id, and if its an initiator or not
-	const sendUser = () => {
+	const sendUser = (id: string) => {
 		socket?.emit("user", {
 			initiator: true,
 			id: socket.id,

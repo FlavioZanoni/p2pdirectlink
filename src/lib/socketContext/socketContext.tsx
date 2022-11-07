@@ -18,10 +18,10 @@ export const SocketProvider: React.FC<Props> = ({children}) => {
 	const [socketConnected, setSocketConnected] = useState(false)
 	const [socketError, setSocketError ] = useState(false)
 	const [socketDisconnected, setSocketDisconnected] = useState(false)
-	const [socket, setsocket] = useState<Socket>()
+	const [socket, setSocket] = useState<Socket>()
 
 	useEffect(() => {
-		setsocket(io("localhost:8080", { transports: ["websocket"] }))
+		setSocket(io("localhost:8080", { transports: ["websocket"] }))
 	}, [])
 	
 	socket?.on("connect", () => {
