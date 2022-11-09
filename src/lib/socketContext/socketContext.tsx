@@ -21,7 +21,11 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
   const [socket, setSocket] = useState<Socket>()
 
   useEffect(() => {
-    setSocket(io("localhost:8080", { transports: ["websocket"] }))
+    setSocket(
+      io("https://sleepy-hamlet-10685.herokuapp.com:8080", {
+        transports: ["websocket"],
+      })
+    )
   }, [])
 
   socket?.on("connect", () => {

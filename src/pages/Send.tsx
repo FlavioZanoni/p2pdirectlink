@@ -101,11 +101,11 @@ export default function Send() {
     <div className="text-center flex flex-col justify-center items-center mx-auto">
       <DropFile files={files} setFiles={setFiles} />
       <p>your link:</p>
-      <p className="w-[36rem] p-2 rounded-md bg-[#C4C4C4]">{`http://localhost:5173/receive#${id}`}</p>
+      <p className="w-[36rem] p-2 rounded-md bg-[#C4C4C4]">{`http://www.p2pdirectlink.com/receive#${id}`}</p>
       <a
         target="_blank"
         rel="noreferrer"
-        href={`http://localhost:5173/receive#${id}`}
+        href={`http://www.p2pdirectlink.com//receive#${id}`}
       >
         link
       </a>
