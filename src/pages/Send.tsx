@@ -105,7 +105,7 @@ export default function Send() {
       <a
         target="_blank"
         rel="noreferrer"
-        href={`http://www.p2pdirectlink.com//receive#${id}`}
+        href={`http://localhost:5173/receive#${id}`}
       >
         link
       </a>

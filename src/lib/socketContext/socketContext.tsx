@@ -22,7 +22,7 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
 
   useEffect(() => {
     setSocket(
-      io("https://sleepy-hamlet-10685.herokuapp.com:8080", {
+      io("http://localhost:8080", {
         transports: ["websocket"],
       })
     )
