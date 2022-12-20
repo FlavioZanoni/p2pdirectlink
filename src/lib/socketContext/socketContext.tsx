@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react"
 import io, { Socket } from "socket.io-client"
-
 export type SocketContextType = {
   socket?: Socket
   socketConnected: boolean
   socketError: boolean
   socketDisconnected: boolean
 }
-
+console.log(import.meta.env.PROD)
 type Props = {
   children: React.ReactNode
 }
@@ -22,9 +21,14 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
 
   useEffect(() => {
     setSocket(
-      io("http://localhost:8080", {
-        transports: ["websocket"],
-      })
+      io(
+        !import.meta.env.PROD
+          ? import.meta.env.VITE_SERVER_URL
+          : "http://localhost:8080",
+        {
+          transports: ["websocket"],
+        }
+      )
     )
   }, [])
 
