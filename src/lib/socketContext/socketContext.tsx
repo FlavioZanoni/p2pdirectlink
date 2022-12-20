@@ -22,7 +22,7 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
   useEffect(() => {
     setSocket(
       io(
-        !import.meta.env.PROD
+        import.meta.env.PROD
           ? import.meta.env.VITE_SERVER_URL
           : "http://localhost:8080",
         {
