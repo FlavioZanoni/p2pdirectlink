@@ -105,3 +105,6 @@ dist
 
 # txt
 a.txt
+
+# Local Netlify folder
+.netlify

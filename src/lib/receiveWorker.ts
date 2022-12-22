@@ -3,11 +3,12 @@
 const worker = async () => {
   onmessage = async function (e) {
     const { data, props } = e.data
-    const result = data.flat()
-    console.log(props)
+    // thanks to https://stackoverflow.com/a/38089419/14314830
+    const flattened = Uint8Array.from(data.reduce((a, b) => [...a, ...b], []))
+
     const propsObj = JSON.parse(props)
 
-    const blob = new Blob([result[0]], { type: propsObj.type })
+    const blob = new Blob([flattened], { type: propsObj.type })
     this.postMessage({ blob: blob, name: propsObj.name })
   }
 }
